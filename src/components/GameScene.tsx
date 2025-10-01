@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Scene3D } from "./Scene3D";
 import { DialogueBox } from "./DialogueBox";
+import { ControlsHint } from "./ControlsHint";
 import { scenes } from "@/data/storyData";
 import { GameState } from "@/types/story";
 
@@ -54,6 +55,9 @@ export const GameScene = () => {
           {currentScene.description}
         </p>
       </div>
+
+      {/* Controls hint */}
+      <ControlsHint />
 
       {/* 3D Canvas */}
       <Canvas>

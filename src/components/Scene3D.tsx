@@ -2,6 +2,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Sphere, Box, Cone, Cylinder, MeshDistortMaterial } from "@react-three/drei";
 import * as THREE from "three";
+import { BoyCharacter } from "./BoyCharacter";
 
 interface Scene3DProps {
   environment: "forest" | "clearing" | "cave" | "cliff" | "temple" | "sunrise";
@@ -9,17 +10,10 @@ interface Scene3DProps {
 
 export const Scene3D = ({ environment }: Scene3DProps) => {
   const groupRef = useRef<THREE.Group>(null);
-  const boyRef = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.001;
-    }
-    
-    // Animate the boy playing
-    if (boyRef.current) {
-      boyRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.3 + 1;
-      boyRef.current.rotation.y = Math.sin(state.clock.elapsedTime) * 0.5;
     }
   });
 
@@ -107,31 +101,8 @@ export const Scene3D = ({ environment }: Scene3DProps) => {
             </group>
           ))}
           
-          {/* Playing boy character */}
-          <group ref={boyRef} position={[0, 1, -8]}>
-            {/* Head */}
-            <Sphere args={[0.3, 16, 16]} position={[0, 0.8, 0]}>
-              <meshStandardMaterial color="#ffdbac" />
-            </Sphere>
-            {/* Body */}
-            <Cylinder args={[0.25, 0.3, 0.8, 16]} position={[0, 0.2, 0]}>
-              <meshStandardMaterial color="#2196f3" />
-            </Cylinder>
-            {/* Arms */}
-            <Cylinder args={[0.1, 0.1, 0.6, 8]} position={[-0.4, 0.3, 0]} rotation={[0, 0, Math.PI / 4]}>
-              <meshStandardMaterial color="#ffdbac" />
-            </Cylinder>
-            <Cylinder args={[0.1, 0.1, 0.6, 8]} position={[0.4, 0.3, 0]} rotation={[0, 0, -Math.PI / 4]}>
-              <meshStandardMaterial color="#ffdbac" />
-            </Cylinder>
-            {/* Legs */}
-            <Cylinder args={[0.12, 0.12, 0.6, 8]} position={[-0.15, -0.3, 0]}>
-              <meshStandardMaterial color="#1976d2" />
-            </Cylinder>
-            <Cylinder args={[0.12, 0.12, 0.6, 8]} position={[0.15, -0.3, 0]}>
-              <meshStandardMaterial color="#1976d2" />
-            </Cylinder>
-          </group>
+          {/* Controllable boy character */}
+          <BoyCharacter />
           
           {/* Trees in background */}
           {[-10, -7, 7, 10].map((x, i) => (
