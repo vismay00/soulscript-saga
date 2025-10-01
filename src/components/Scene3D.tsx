@@ -65,6 +65,9 @@ export const Scene3D = ({ environment }: Scene3DProps) => {
         </>
       )}
 
+      {/* Controllable boy character - appears in all environments */}
+      <BoyCharacter />
+
       {/* Forest environment with huts, bushes, and playing boy */}
       {environment === "forest" && (
         <>
@@ -100,9 +103,6 @@ export const Scene3D = ({ environment }: Scene3DProps) => {
               </Box>
             </group>
           ))}
-          
-          {/* Controllable boy character */}
-          <BoyCharacter />
           
           {/* Trees in background */}
           {[-10, -7, 7, 10].map((x, i) => (
