@@ -4,6 +4,7 @@ import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Scene3D } from "./Scene3D";
 import { DialogueBox } from "./DialogueBox";
 import { ControlsHint } from "./ControlsHint";
+
 import { scenes } from "@/data/storyData";
 import { GameState } from "@/types/story";
 
