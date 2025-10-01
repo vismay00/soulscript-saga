@@ -4,21 +4,21 @@ export const scenes: Record<string, Scene> = {
   start: {
     id: "start",
     title: "Awakening",
-    description: "You wake up in a mysterious forest, moonlight filtering through ancient trees.",
+    description: "You wake up in a peaceful village, warm sunlight streaming through the trees.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "The world comes into focus slowly. You're lying on soft moss, surrounded by towering trees that seem to whisper secrets.",
+        text: "The world comes into focus slowly. You're lying on soft grass, surrounded by small huts and the sounds of nature. A young boy plays nearby, laughing as he runs between the bushes.",
         emotion: "neutral",
       },
       {
         speaker: "You",
-        text: "Where... where am I?",
+        text: "Where... where am I? This place feels so peaceful.",
         emotion: "worried",
       },
       {
         speaker: "Narrator",
-        text: "In the distance, you notice two paths: one glowing with a soft, inviting light, the other shrouded in darkness.",
+        text: "In the distance, you notice two paths leading away from the village: one towards a bright clearing, the other into deeper woods.",
         emotion: "neutral",
       },
     ],

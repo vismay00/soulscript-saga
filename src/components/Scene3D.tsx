@@ -1,6 +1,6 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Sphere, Box, Cone, Cylinder, MeshDistortMaterial, Stars } from "@react-three/drei";
+import { Sphere, Box, Cone, Cylinder, MeshDistortMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 interface Scene3DProps {
@@ -9,41 +9,52 @@ interface Scene3DProps {
 
 export const Scene3D = ({ environment }: Scene3DProps) => {
   const groupRef = useRef<THREE.Group>(null);
+  const boyRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.001;
+    }
+    
+    // Animate the boy playing
+    if (boyRef.current) {
+      boyRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.3 + 1;
+      boyRef.current.rotation.y = Math.sin(state.clock.elapsedTime) * 0.5;
     }
   });
 
   const environmentColors = useMemo(() => {
     switch (environment) {
       case "forest":
-        return { primary: "#1a472a", secondary: "#2d5a3d", accent: "#4a7c59" };
+        return { primary: "#8bc34a", secondary: "#689f38", accent: "#558b2f", ground: "#a1887f", sky: "#87ceeb" };
       case "clearing":
-        return { primary: "#2a4a7c", secondary: "#3d5a8f", accent: "#5a7ca2" };
+        return { primary: "#66bb6a", secondary: "#4caf50", accent: "#388e3c", ground: "#d7ccc8", sky: "#b3e5fc" };
       case "cave":
-        return { primary: "#1a1a2e", secondary: "#16213e", accent: "#2d3561" };
+        return { primary: "#1a1a2e", secondary: "#16213e", accent: "#2d3561", ground: "#424242", sky: "#263238" };
       case "cliff":
-        return { primary: "#2e1a47", secondary: "#3e2d5a", accent: "#5a4a7c" };
+        return { primary: "#7b1fa2", secondary: "#6a1b9a", accent: "#4a148c", ground: "#5d4037", sky: "#7986cb" };
       case "temple":
-        return { primary: "#472e1a", secondary: "#5a3e2d", accent: "#7c5a4a" };
+        return { primary: "#ff6f00", secondary: "#f57c00", accent: "#e65100", ground: "#6d4c41", sky: "#ffcc80" };
       case "sunrise":
-        return { primary: "#ff6b35", secondary: "#f7931e", accent: "#ffaa00" };
+        return { primary: "#ff6b35", secondary: "#f7931e", accent: "#ffaa00", ground: "#8d6e63", sky: "#ffe0b2" };
       default:
-        return { primary: "#1a472a", secondary: "#2d5a3d", accent: "#4a7c59" };
+        return { primary: "#8bc34a", secondary: "#689f38", accent: "#558b2f", ground: "#a1887f", sky: "#87ceeb" };
     }
   }, [environment]);
 
   return (
     <group ref={groupRef}>
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      {/* Sky sphere for daytime */}
+      <Sphere args={[100, 32, 32]} position={[0, 0, 0]}>
+        <meshBasicMaterial color={environmentColors.sky} side={THREE.BackSide} />
+      </Sphere>
       
-      {/* Ambient light */}
-      <ambientLight intensity={0.3} />
+      {/* Bright daytime lighting */}
+      <ambientLight intensity={0.8} />
       
-      {/* Main directional light */}
-      <directionalLight position={[10, 10, 5]} intensity={1} />
+      {/* Sun light */}
+      <directionalLight position={[10, 20, 10]} intensity={2} color="#fffacd" castShadow />
+      <directionalLight position={[-10, 15, -5]} intensity={0.5} color="#fff9e6" />
       
       {/* Environment-specific lighting */}
       {environment === "sunrise" && (
@@ -55,27 +66,84 @@ export const Scene3D = ({ environment }: Scene3DProps) => {
       
       {environment === "temple" && (
         <>
-          <pointLight position={[0, 8, 0]} intensity={1.5} color="#9b59b6" />
-          <pointLight position={[-4, 4, -4]} intensity={0.8} color="#3498db" />
+          <pointLight position={[0, 8, 0]} intensity={1.5} color="#ff9800" />
+          <pointLight position={[-4, 4, -4]} intensity={0.8} color="#ffb74d" />
         </>
       )}
 
-      {/* Forest environment */}
+      {/* Forest environment with huts, bushes, and playing boy */}
       {environment === "forest" && (
         <>
-          {[-5, -2, 2, 5].map((x, i) => (
-            <group key={i} position={[x, 0, -5 - i * 2]}>
+          {/* Ground */}
+          <Box args={[40, 0.2, 40]} position={[0, 0, -10]}>
+            <meshStandardMaterial color={environmentColors.ground} />
+          </Box>
+          
+          {/* Small bushes scattered around */}
+          {[
+            [-6, 0, -8], [-3, 0, -12], [4, 0, -7], [6, 0, -14], 
+            [-8, 0, -15], [2, 0, -18], [-4, 0, -20], [7, 0, -19]
+          ].map((pos, i) => (
+            <Sphere key={`bush-${i}`} args={[0.6, 16, 16]} position={pos as [number, number, number]}>
+              <meshStandardMaterial color={environmentColors.primary} roughness={0.8} />
+            </Sphere>
+          ))}
+          
+          {/* Small huts */}
+          {[[-5, 0, -10], [5, 0, -12], [0, 0, -18]].map((pos, i) => (
+            <group key={`hut-${i}`} position={pos as [number, number, number]}>
+              {/* Hut walls */}
+              <Box args={[2, 2, 2]} position={[0, 1, 0]}>
+                <meshStandardMaterial color="#8d6e63" />
+              </Box>
+              {/* Hut roof */}
+              <Cone args={[1.6, 1.5, 4]} position={[0, 2.7, 0]}>
+                <meshStandardMaterial color="#5d4037" />
+              </Cone>
+              {/* Door */}
+              <Box args={[0.6, 1, 0.1]} position={[0, 0.5, 1.05]}>
+                <meshStandardMaterial color="#3e2723" />
+              </Box>
+            </group>
+          ))}
+          
+          {/* Playing boy character */}
+          <group ref={boyRef} position={[0, 1, -8]}>
+            {/* Head */}
+            <Sphere args={[0.3, 16, 16]} position={[0, 0.8, 0]}>
+              <meshStandardMaterial color="#ffdbac" />
+            </Sphere>
+            {/* Body */}
+            <Cylinder args={[0.25, 0.3, 0.8, 16]} position={[0, 0.2, 0]}>
+              <meshStandardMaterial color="#2196f3" />
+            </Cylinder>
+            {/* Arms */}
+            <Cylinder args={[0.1, 0.1, 0.6, 8]} position={[-0.4, 0.3, 0]} rotation={[0, 0, Math.PI / 4]}>
+              <meshStandardMaterial color="#ffdbac" />
+            </Cylinder>
+            <Cylinder args={[0.1, 0.1, 0.6, 8]} position={[0.4, 0.3, 0]} rotation={[0, 0, -Math.PI / 4]}>
+              <meshStandardMaterial color="#ffdbac" />
+            </Cylinder>
+            {/* Legs */}
+            <Cylinder args={[0.12, 0.12, 0.6, 8]} position={[-0.15, -0.3, 0]}>
+              <meshStandardMaterial color="#1976d2" />
+            </Cylinder>
+            <Cylinder args={[0.12, 0.12, 0.6, 8]} position={[0.15, -0.3, 0]}>
+              <meshStandardMaterial color="#1976d2" />
+            </Cylinder>
+          </group>
+          
+          {/* Trees in background */}
+          {[-10, -7, 7, 10].map((x, i) => (
+            <group key={`tree-${i}`} position={[x, 0, -25 - i * 2]}>
               <Cylinder args={[0.3, 0.4, 6, 8]} position={[0, 3, 0]}>
-                <meshStandardMaterial color={environmentColors.primary} />
+                <meshStandardMaterial color={environmentColors.secondary} />
               </Cylinder>
               <Cone args={[1.5, 3, 8]} position={[0, 6.5, 0]}>
                 <meshStandardMaterial color={environmentColors.accent} />
               </Cone>
             </group>
           ))}
-          <Box args={[30, 0.2, 30]} position={[0, 0, -10]}>
-            <meshStandardMaterial color="#0d2818" />
-          </Box>
         </>
       )}
 
