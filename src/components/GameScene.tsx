@@ -7,6 +7,7 @@ import { ControlsHint } from "./ControlsHint";
 
 import { scenes } from "@/data/storyData";
 import { GameState } from "@/types/story";
+import { BackgroundMusic } from "./BackgroundMusic";
 
 export const GameScene = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -47,6 +48,8 @@ export const GameScene = () => {
 
   return (
     <div className="w-full h-screen relative">
+  {/* Background Music */}
+  <BackgroundMusic environment={currentScene.environment} />
       {/* Title overlay */}
       <div className="absolute top-6 left-6 z-10 pointer-events-none">
         <h1 className="text-4xl font-bold text-foreground glow-text animate-fade-in">
