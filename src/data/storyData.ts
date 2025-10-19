@@ -3,399 +3,307 @@ import { Scene } from "@/types/story";
 export const scenes: Record<string, Scene> = {
   start: {
     id: "start",
-    title: "The Awakening",
-    description: "You open your eyes on a mossy forest floor as strange birds sing overhead. Ancient trees surround you, and in the distance, ruins glimmer beneath the morning sun.",
+    title: "The Drifting Deck",
+    description:
+      "You awaken on a weathered ship floating on a glowing ocean beneath an endless night sky. The stars shimmer above and below, as if the sea mirrors the heavens.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "You awaken in an unfamiliar wood, your memories clouded but your senses sharp. The world is vibrant, alive with possibility.",
+        text: "You awaken to the hum of gentle waves. The water below glows like liquid starlight.",
         emotion: "neutral",
       },
       {
         speaker: "You",
-        text: "All is new, yet oddly familiar. Where am I, and what brought me here?",
-  emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "You notice a curious glowing compass in your hand. Two trails lead away: one towards an ancient archway bathed in light, the other winding into a misty gorge.",
-        emotion: "neutral",
-      }
-    ],
-    choices: [
-      {
-        text: "Investigate the ancient archway",
-        nextScene: "archway",
-        impact: "positive",
-      },
-      {
-        text: "Journey into the misty gorge",
-        nextScene: "gorge",
-        impact: "negative",
-      },
-    ],
-    environment: "forest",
-    cameraPosition: [0, 6, 12],
-    cameraTarget: [1, 0, 0],
-  },
-
-  archway: {
-    id: "archway",
-    title: "The Gleaming Archway",
-    description: "A majestic ruin rises, sunlight pierces through stone columns. A wise figure awaits, wreathed in golden light.",
-    dialogue: [
-      {
-        speaker: "Narrator",
-        text: "The archway beckons, each stone etched with mysterious runes. A figure in a glowing robe stands within, their eyes full of stories.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "Elder",
-        text: "Many travelers arrive here, but only those who seek truth dare enter. Will you face the temple's riddles?",
-        emotion: "neutral",
-      },
-      {
-        speaker: "You",
-        text: "I seek answers, and perhaps a place in this world.",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "Elder",
-        text: "Inside, your heart will be tested—not by force, but by choice.",
-        emotion: "neutral",
-      },
-    ],
-    choices: [
-      {
-        text: "Follow the Elder",
-        nextScene: "templeExterior",
-        impact: "positive",
-      },
-      {
-        text: "Go alone into the temple",
-        nextScene: "templeInterior",
-        impact: "neutral",
-      },
-    ],
-  environment: "temple",
-    cameraPosition: [3, 8, 14],
-    cameraTarget: [0, 2, 0],
-  },
-
-  gorge: {
-    id: "gorge",
-    title: "Mist and Echoes",
-    description: "The air thickens with mist as shadows flicker. Echoes hint at hidden things.",
-    dialogue: [
-      {
-        speaker: "Narrator",
-        text: "The gorge descends steeply, twilight gathering by your feet. Strange shapes move in the haze. You sense you are watched.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "Voice",
-        text: "Are you lost... or are you searching?",
+        text: "Where am I? The stars... they feel close enough to touch.",
         emotion: "worried",
       },
       {
-        speaker: "You",
-        text: "Neither. I am finding my own way.",
-  emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "A bridge of ancient wood crosses the ravine. It looks both inviting and perilous.",
+        speaker: "Whispering Voice",
+        text: "The lost drift until they remember why they came.",
         emotion: "neutral",
       },
     ],
     choices: [
       {
-        text: "Cross the ancient bridge",
-        nextScene: "bridge",
-        impact: "negative",
-      },
-      {
-        text: "Climb the cliff walls",
-        nextScene: "cliffClimb",
+        text: "Enter the captain’s cabin",
+        nextScene: "cabin",
         impact: "neutral",
       },
-    ],
-  environment: "cliff",
-    cameraPosition: [0, 4, 14],
-    cameraTarget: [0, 1, -3],
-  },
-
-  templeExterior: {
-    id: "templeExterior",
-    title: "Temple Steps",
-    description: "The steps to the temple gleam under floating lanterns. The Elder pauses.",
-    dialogue: [
       {
-        speaker: "Elder",
-        text: "Courage and kindness shape the journey ahead. Are you ready for what lies within?",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "You",
-        text: "Yes. I carry my past and hopes within me.",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "You reach the ancient doors. They open inwards, revealing an inner sanctum filled with golden light.",
-        emotion: "neutral",
-      }
-    ],
-    choices: [
-      {
-        text: "Enter the sanctum",
-        nextScene: "sanctum",
+        text: "Climb down to the starlit shore",
+        nextScene: "shore",
         impact: "positive",
       },
     ],
-    environment: "temple",
-    cameraPosition: [2, 6, 10],
-    cameraTarget: [0, 1, 0],
-  },
-
-  templeInterior: {
-    id: "templeInterior",
-    title: "Temple Shadows",
-    description: "You steal alone into the temple, every shadow heavy with meaning.",
-    dialogue: [
-      {
-        speaker: "Narrator",
-        text: "The silence inside the temple is profound. Carvings along the wall shift as you pass, telling stories of past wanderers.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "You",
-        text: "I am alone, but not afraid.",
-  emotion: "hopeful",
-      },
-      {
-        speaker: "Ancient Voice",
-        text: "To enter the temple is to enter yourself. What burdens will you carry forward?",
-        emotion: "neutral",
-      },
-    ],
-    choices: [
-      {
-        text: "Continue deeper",
-        nextScene: "sanctum",
-        impact: "neutral",
-      },
-    ],
-    environment: "temple",
-    cameraPosition: [-2, 4, 8],
-    cameraTarget: [0, 2, 0],
-  },
-
-  bridge: {
-    id: "bridge",
-    title: "The Crossing",
-    description: "With steady steps, you cross the bridge. The mist parts, revealing a secret passage.",
-    dialogue: [
-      {
-        speaker: "Narrator",
-        text: "Wood creaks beneath your feet but holds. On the other side blooms a garden of silver flowers and a hidden stair.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "You",
-        text: "Safe, for now. What wonders lie ahead?",
-  emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "The stair leads to a temple carved into the mountainside. It pulses with silent, waiting power.",
-        emotion: "neutral",
-      }
-    ],
-    choices: [
-      {
-        text: "Climb to the temple",
-        nextScene: "sanctum",
-        impact: "positive",
-      },
-    ],
-  environment: "clearing",
-    cameraPosition: [0, 7, 12],
-    cameraTarget: [0, 1, 0],
-  },
-
-  cliffClimb: {
-    id: "cliffClimb",
-    title: "Cliffside Perseverance",
-    description: "You scale the cliff, hands finding hidden holds. Each breath is effort, each movement will.",
-    dialogue: [
-      {
-        speaker: "Narrator",
-        text: "Your fingers find ancient carvings, worn by time and weather. At last, you crest the top and behold the temple bathed in sunset gold.",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "You",
-        text: "I earned this ascent. The temple calls to me.",
-  emotion: "happy",
-      },
-    ],
-    choices: [
-      {
-        text: "Enter the temple",
-        nextScene: "sanctum",
-        impact: "positive",
-      },
-    ],
-    environment: "cliff",
-    cameraPosition: [6, 12, 14],
+    environment: "ship",
+    cameraPosition: [0, 6, 12],
     cameraTarget: [0, 0, 0],
   },
 
-  sanctum: {
-    id: "sanctum",
-    title: "Sanctum of Choices",
-    description: "Inside the sanctum, two altars shimmer: one of crystal, one of flame. Light and warmth wait for your decision.",
+  cabin: {
+    id: "cabin",
+    title: "The Captain’s Memory",
+    description:
+      "Inside the dimly lit cabin, old maps and journals scatter across the table. One map glows faintly, marking a place called the 'Tide Altar'.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "The sanctum is sacred. Golden light falls from unseen sources. Two altars rise: one crystal, glowing with possibility; one flame, radiating comfort and safety.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "Ancient Voice",
-        text: "The crystal will grant freedom and adventure, but send you far from all you've known. The flame offers healing and guardianship, but you must remain and guide others.",
+        text: "The air smells of salt and ink. A map pinned to the wall trembles as if it remembers your touch.",
         emotion: "neutral",
       },
       {
         speaker: "You",
-        text: "What do these choices mean for me and for the world?",
-        emotion: "worried",
+        text: "Tide Altar... perhaps that’s the key to leaving this sea.",
+        emotion: "hopeful",
       },
       {
-        speaker: "Ancient Voice",
-        text: "Only you can decide. Will you walk the uncharted path or offer light to those who are lost?",
+        speaker: "Voice from the shadows",
+        text: "Every key turns two ways — one to open, one to bind.",
         emotion: "neutral",
       },
     ],
     choices: [
       {
-        text: "Choose the Crystal",
-        nextScene: "crystalEnding",
-        impact: "neutral",
-      },
-      {
-        text: "Choose the Flame",
-        nextScene: "flameEnding",
+        text: "Take the map and head to the Altar",
+        nextScene: "altar",
         impact: "positive",
       },
       {
-        text: "Refuse both and seek a hidden door",
-        nextScene: "hiddenEnding",
+        text: "Ignore the warning and explore the lower decks",
+        nextScene: "depths",
         impact: "neutral",
       },
     ],
-  environment: "temple",
-    cameraPosition: [0, 9, 18],
-    cameraTarget: [0, 2, 0],
+    environment: "cabin",
+    cameraPosition: [2, 5, 10],
+    cameraTarget: [0, 0, 0],
   },
 
-  crystalEnding: {
-    id: "crystalEnding",
-    title: "The Adventurer's Road",
-    description: "You grasp the crystal. The walls dissolve, revealing the world beyond and endless possibility.",
+  shore: {
+    id: "shore",
+    title: "Shore of Stars",
+    description:
+      "The ship drifts to rest against a shore of shining sand. The air hums softly, as if the stars themselves breathe.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "As your hand closes around the crystal, the world shifts. You stand on the edge of a vast new land, the temple fading behind you.",
+        text: "You step onto the glowing shore. Every grain of sand seems alive with memory.",
+        emotion: "neutral",
+      },
+      {
+        speaker: "You",
+        text: "It feels alive... like it knows me.",
+        emotion: "hopeful",
+      },
+      {
+        speaker: "Spirit",
+        text: "All things here remember. Even you.",
+        emotion: "neutral",
+      },
+    ],
+    choices: [
+      {
+        text: "Follow the spirits to the Tide Altar",
+        nextScene: "altar",
+        impact: "positive",
+      },
+      {
+        text: "Dive beneath the glowing waves",
+        nextScene: "depths",
+        impact: "neutral",
+      },
+    ],
+    environment: "beach",
+    cameraPosition: [0, 6, 12],
+    cameraTarget: [0, 0, 0],
+  },
+
+  altar: {
+    id: "altar",
+    title: "The Tide Altar",
+    description:
+      "Stone pillars rise from the sea, circling a glowing pool. In the reflection, you see not your face, but your memories.",
+    dialogue: [
+      {
+        speaker: "Narrator",
+        text: "The starlit water shows fragments of your past — laughter, sorrow, choices that shaped you.",
+        emotion: "neutral",
+      },
+      {
+        speaker: "You",
+        text: "This place knows who I am.",
+        emotion: "worried",
+      },
+      {
+        speaker: "Echoing Voice",
+        text: "To move forward, you must face what you left behind.",
+        emotion: "neutral",
+      },
+    ],
+    choices: [
+      {
+        text: "Step into the memory of light",
+        nextScene: "starPath",
+        impact: "positive",
+      },
+      {
+        text: "Step into the memory of shadow",
+        nextScene: "depths",
+        impact: "neutral",
+      },
+    ],
+    environment: "altar",
+    cameraPosition: [0, 7, 14],
+    cameraTarget: [0, 1, 0],
+  },
+
+  starPath: {
+    id: "starPath",
+    title: "Path of Light",
+    description:
+      "Golden bridges of light rise into the sky, each step echoing with your heartbeat and the hum of distant constellations.",
+    dialogue: [
+      {
+        speaker: "Narrator",
+        text: "You ascend on a road made of stars. The air is warm, and your burdens fade with every step.",
         emotion: "hopeful",
       },
       {
         speaker: "You",
-        text: "My journey is my own. I am ready to discover what waits.",
-        emotion: "happy",
-      },
-      {
-        speaker: "Narrator",
-        text: "You step forward, heart alive, every step a new beginning.",
+        text: "I see now — every choice I made led here.",
         emotion: "hopeful",
       },
       {
-        speaker: "Narrator",
-        text: "Adventures await for those who dare to choose themselves.",
+        speaker: "Celestial Guardian",
+        text: "Will you ascend to freedom, or remain to guide the lost?",
         emotion: "neutral",
       },
     ],
-  environment: "sunrise",
+    choices: [
+      {
+        text: "Accept freedom and rise to the stars",
+        nextScene: "freedomEnding",
+        impact: "positive",
+      },
+      {
+        text: "Return to guide others",
+        nextScene: "guardianEnding",
+        impact: "positive",
+      },
+    ],
+    environment: "sky",
+    cameraPosition: [0, 9, 18],
+    cameraTarget: [0, 0, 0],
+  },
+
+  depths: {
+    id: "depths",
+    title: "The Sea Below",
+    description:
+      "You dive beneath the glowing waves. The darkness embraces you, soft and endless, filled with whispers of the past.",
+    dialogue: [
+      {
+        speaker: "Narrator",
+        text: "In the depths, shapes drift like dreams. Each whisper feels like a forgotten memory.",
+        emotion: "neutral",
+      },
+      {
+        speaker: "You",
+        text: "Are you… the souls who came before me?",
+        emotion: "worried",
+      },
+      {
+        speaker: "Voices",
+        text: "We are echoes. Stay, and remember with us.",
+        emotion: "neutral",
+      },
+    ],
+    choices: [
+      {
+        text: "Join the sea of memories",
+        nextScene: "eternalEnding",
+        impact: "neutral",
+      },
+      {
+        text: "Fight toward the surface",
+        nextScene: "altar",
+        impact: "positive",
+      },
+    ],
+    environment: "ocean",
+    cameraPosition: [0, 5, 10],
+    cameraTarget: [0, 0, 0],
+  },
+
+  freedomEnding: {
+    id: "freedomEnding",
+    title: "The Sky Beyond",
+    description:
+      "You rise through the sky, leaving the starlit sea behind. A new world glows before you, boundless and alive.",
+    dialogue: [
+      {
+        speaker: "Narrator",
+        text: "You have faced yourself and chosen freedom. The world awaits — vast, untamed, and beautiful.",
+        emotion: "hopeful",
+      },
+      {
+        speaker: "You",
+        text: "I am no longer lost. My journey begins anew.",
+        emotion: "happy",
+      },
+    ],
+    environment: "sky",
     cameraPosition: [12, 10, 18],
     cameraTarget: [0, 0, -12],
     isEnding: true,
-    endingType: "neutral",
+    endingType: "good",
   },
 
-  flameEnding: {
-    id: "flameEnding",
-    title: "The Guardian’s Promise",
-    description: "You choose the flame and become the guardian. The temple fills with life, and you sense every soul who needs help.",
+  guardianEnding: {
+    id: "guardianEnding",
+    title: "Keeper of the Sea",
+    description:
+      "You descend back to the altar, glowing brighter than before. The lost gather around your light, drawn home by your presence.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "Warmth floods through you as you hold the flame. The sanctum glows brighter, welcoming all travelers who may need sanctuary.",
+        text: "The sea hums in harmony. You are its keeper now, a beacon for all who drift in the dark.",
         emotion: "hopeful",
-      },
-      {
-        speaker: "Ancient Voice",
-        text: "Compassion is the hardest path: you are now guide and guardian, forever present for the lost.",
-        emotion: "neutral",
       },
       {
         speaker: "You",
-        text: "I accept this gift. Let other wanderers find hope here.",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "A new age begins for the temple. You are the flame in the darkness, a protector for every soul that passes.",
+        text: "Then let no one be lost again.",
         emotion: "hopeful",
       },
     ],
-  environment: "temple",
-    cameraPosition: [0, 13, 22],
+    environment: "altar",
+    cameraPosition: [0, 12, 20],
     cameraTarget: [0, 0, 0],
     isEnding: true,
     endingType: "good",
   },
 
-  hiddenEnding: {
-    id: "hiddenEnding",
-    title: "Path of Mystery",
-    description: "You search for another way. A hidden door opens, leading you to a moonlit grove where your story can truly begin.",
+  eternalEnding: {
+    id: "eternalEnding",
+    title: "The Last Echo",
+    description:
+      "You surrender to the sea, your form dissolving into shimmering currents. The ocean sings your story forever.",
     dialogue: [
       {
         speaker: "Narrator",
-        text: "Refusing both choices, you notice an engraving on the wall. Pressing it opens a secret passage.",
-        emotion: "neutral",
-      },
-      {
-        speaker: "Ancient Voice",
-        text: "Few have sought this path. Uncertainty is its own adventure.",
+        text: "The sea claims you gently. Your memories scatter like pearls in the tide, endless and eternal.",
         emotion: "neutral",
       },
       {
         speaker: "You",
-        text: "Whatever comes next, I will face it as myself.",
-        emotion: "hopeful",
-      },
-      {
-        speaker: "Narrator",
-        text: "You step into the grove, the moon bright above, your destiny shining in every shadow.",
+        text: "Maybe being remembered is enough.",
         emotion: "hopeful",
       },
     ],
-  environment: "forest",
+    environment: "ocean",
     cameraPosition: [0, 8, 15],
     cameraTarget: [0, 0, 0],
     isEnding: true,
-    endingType: "good",
+    endingType: "neutral",
   },
 };

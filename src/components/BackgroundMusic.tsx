@@ -1,9 +1,13 @@
 import { useEffect, useRef } from "react";
+import { Scene } from "@/types/story";
 
-export type Environment = "forest" | "ruins" | "gorge" | "cliff" | "temple" | "sanctum" | "garden" | "grove" | "meadow" | "clearing" | "cave" | "sunrise";
+// Use the canonical environment union from the Story Scene so the audio
+// system stays in sync with scene definitions.
+export type Environment = Scene["environment"];
 
 interface BackgroundMusicProps {
   environment: Environment;
+  userAllowed?: boolean;
 }
 
 // Utility: create white noise buffer
@@ -22,15 +26,20 @@ function rand(a: number, b: number) {
   return a + Math.random() * (b - a);
 }
 
-export const BackgroundMusic = ({ environment }: BackgroundMusicProps) => {
+export const BackgroundMusic = ({ environment, userAllowed }: BackgroundMusicProps) => {
   const ctxRef = useRef<AudioContext | null>(null);
+  const userAllowedRef = useRef<boolean>(false);
+  // master gain ref so we can mute/unmute without recreating layers
+  const masterGainRef = useRef<GainNode | null>(null);
   const envRef = useRef(environment);
   envRef.current = environment;
   const soundLayersRef = useRef<any>({});
   const fadeDuration = 2.5;
 
   // Sound layer definitions for each environment
-  const ENV_LAYERS: Record<Environment, Array<{ key: string; create: (ctx: AudioContext, master: GainNode) => { gain: GainNode; stop: () => void } }>> = {
+  // Make this a Partial map so we only need to provide layers for
+  // environments we want to customize. Missing keys will fallback to []
+  const ENV_LAYERS: Partial<Record<Environment, Array<{ key: string; create: (ctx: AudioContext, master: GainNode) => { gain: GainNode; stop: () => void } }>>> = {
     forest: [
       // Wind
       {
@@ -764,6 +773,138 @@ export const BackgroundMusic = ({ environment }: BackgroundMusicProps) => {
         },
       },
     ],
+    // Ship environment (first scene) - add ocean/waves music
+    ship: [
+      // Gentle waves (filtered noise with slow amplitude LFO)
+      {
+        key: "waves",
+        create: (ctx, master) => {
+          const src = ctx.createBufferSource();
+          src.buffer = createNoiseBuffer(ctx);
+          src.loop = true;
+
+          const filter = ctx.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.value = 900;
+
+          const gain = ctx.createGain();
+          gain.gain.value = 0.12;
+
+          // LFO to gently swell the waves
+          const lfo = ctx.createOscillator();
+          lfo.type = "sine";
+          lfo.frequency.value = 0.18; // ~0.18 Hz (slow swell)
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = 0.06; // modulation depth
+          lfo.connect(lfoGain).connect(gain.gain);
+
+          src.connect(filter).connect(gain).connect(master);
+          src.start();
+          lfo.start();
+
+          return {
+            gain,
+            stop: () => {
+              try { src.stop(); } catch (e) {}
+              try { lfo.stop(); } catch (e) {}
+            },
+          };
+        },
+      },
+      // Optional ocean music file (place an MP3 at public/ocean-music.mp3)
+      {
+        key: "oceanMusic",
+        create: (ctx, master) => {
+          const gain = ctx.createGain();
+          gain.gain.value = 0.0; // start silent; will be faded in by manager
+          gain.connect(master);
+
+          let src: AudioBufferSourceNode | null = null;
+          let stopped = false;
+
+          // Async load the audio buffer and start playback when ready
+          (async () => {
+            if (stopped) return;
+            try {
+              console.log('[BackgroundMusic] attempting to fetch /ocean-music.mp3');
+              const resp = await fetch('/ocean-music.mp3');
+              console.log('[BackgroundMusic] fetch response', resp.status, resp.ok);
+              if (!resp.ok) {
+                console.warn('[BackgroundMusic] ocean-music.mp3 not found or fetch failed');
+                return;
+              }
+              const arrayBuffer = await resp.arrayBuffer();
+              console.log('[BackgroundMusic] fetched arrayBuffer, decoding...');
+              const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+              console.log('[BackgroundMusic] decodeAudioData success', audioBuffer && audioBuffer.duration);
+              if (stopped) return;
+              src = ctx.createBufferSource();
+              src.buffer = audioBuffer;
+              src.loop = true;
+              src.connect(gain);
+              src.start();
+              console.log('[BackgroundMusic] started ocean-music buffer source');
+              // set a target gain to be used by fade (manager will call fadeGain)
+              gain.gain.value = 0.16;
+            } catch (e) {
+              console.error('[BackgroundMusic] error loading ocean-music.mp3', e);
+              // fail silently; fallback procedural layers will still play
+            }
+          })();
+
+          return {
+            gain,
+            stop: () => {
+              stopped = true;
+              try { if (src) src.stop(); } catch (e) {}
+            },
+          };
+        },
+      },
+      // Distant gull-like calls (sparse sine chirps)
+      {
+        key: "gulls",
+        create: (ctx, master) => {
+          let stopped = false;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.06;
+          gain.connect(master);
+          function call() {
+            if (stopped) return;
+            const osc = ctx.createOscillator();
+            osc.type = "sine";
+            osc.frequency.value = rand(1000, 1800);
+            const callGain = ctx.createGain();
+            callGain.gain.value = rand(0.04, 0.08);
+            osc.connect(callGain).connect(gain);
+            osc.start();
+            callGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
+            osc.stop(ctx.currentTime + 0.62);
+            osc.onended = () => {
+              osc.disconnect();
+              callGain.disconnect();
+            };
+            setTimeout(call, rand(6000, 14000));
+          }
+          setTimeout(call, rand(1000, 4000));
+          return { gain, stop: () => { stopped = true; } };
+        },
+      },
+      // Subtle ambient pad to add warmth
+      {
+        key: "pad",
+        create: (ctx, master) => {
+          const osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = 110;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.04;
+          osc.connect(gain).connect(master);
+          osc.start();
+          return { gain, stop: () => { try { osc.stop(); } catch (e) {} } };
+        },
+      },
+    ],
     // fallback for other environments
     clearing: [],
     cave: [],
@@ -784,9 +925,11 @@ export const BackgroundMusic = ({ environment }: BackgroundMusicProps) => {
       ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       ctxRef.current = ctx;
     }
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = 0.18;
-    masterGain.connect(ctx.destination);
+  const masterGain = ctx.createGain();
+  // Start muted if user hasn't allowed audio yet
+  masterGain.gain.value = userAllowed ? 0.18 : 0.0;
+  masterGain.connect(ctx.destination);
+  masterGainRef.current = masterGain;
 
     // Start new environment layers
     const newLayers = {};
@@ -815,8 +958,26 @@ export const BackgroundMusic = ({ environment }: BackgroundMusicProps) => {
         setTimeout(() => newLayers[key].stop(), fadeDuration * 1000 + 100);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [environment]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [environment, userAllowed]);
+
+    // Respond to userAllowed toggles: resume AudioContext and fade master gain
+    useEffect(() => {
+      const ctx = ctxRef.current;
+      const master = masterGainRef.current;
+      if (!ctx || !master) return;
+      if (userAllowed) {
+        // resume audio context (browsers may require user gesture)
+        try {
+          ctx.resume().catch(() => {});
+        } catch {}
+        // fade in master
+        try { fadeGain(master, 0.18, ctx, 0.8); } catch {}
+      } else {
+        // fade out master
+        try { fadeGain(master, 0.0, ctx, 0.5); } catch {}
+      }
+    }, [userAllowed]);
 
   return null;
 };

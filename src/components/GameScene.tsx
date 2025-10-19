@@ -21,6 +21,7 @@ export const GameScene = () => {
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 0]);
 
   const currentScene = scenes[gameState.currentScene];
+  const [audioAllowed, setAudioAllowed] = useState(false);
 
   useEffect(() => {
     // Smooth camera transition
@@ -49,7 +50,32 @@ export const GameScene = () => {
   return (
     <div className="w-full h-screen relative">
   {/* Background Music */}
-  <BackgroundMusic environment={currentScene.environment} />
+  <BackgroundMusic environment={currentScene.environment} userAllowed={audioAllowed} />
+      {/* Audio control */}
+      <div className="absolute top-6 right-6 z-20">
+        <button
+          onClick={() => setAudioAllowed((v) => !v)}
+          className="px-4 py-2 rounded bg-primary text-card"
+        >
+          {audioAllowed ? "🔊 Audio On" : "🔈 Enable Audio"}
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              console.log('[GameScene] attempting HTMLAudio playback of /ocean-music.mp3');
+              const a = new Audio('/ocean-music.mp3');
+              a.loop = true;
+              await a.play();
+              console.log('[GameScene] HTMLAudio playback started successfully');
+            } catch (e) {
+              console.error('[GameScene] HTMLAudio playback failed', e);
+            }
+          }}
+          className="ml-2 px-4 py-2 rounded bg-secondary text-card"
+        >
+          ▶ Play sample
+        </button>
+      </div>
       {/* Title overlay */}
       <div className="absolute top-6 left-6 z-10 pointer-events-none">
         <h1 className="text-4xl font-bold text-foreground glow-text animate-fade-in">
@@ -84,6 +110,7 @@ export const GameScene = () => {
 
       {/* Dialogue UI */}
       <DialogueBox
+        sceneId={currentScene.id}
         dialogue={currentScene.dialogue}
         currentLineIndex={currentLineIndex}
         choices={currentScene.choices}

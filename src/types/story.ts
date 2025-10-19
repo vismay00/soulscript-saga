@@ -16,7 +16,27 @@ export interface Scene {
   description: string;
   dialogue: DialogueLine[];
   choices?: Choice[];
-  environment: "forest" | "clearing" | "cave" | "cliff" | "temple" | "sunrise";
+  // Expanded environment union to cover all environments used in the project (and include 'desert')
+  environment:
+    | "forest"
+    | "clearing"
+    | "cave"
+    | "cliff"
+    | "temple"
+    | "sunrise"
+    | "ruins"
+    | "gorge"
+    | "sanctum"
+    | "garden"
+    | "grove"
+    | "meadow"
+    | "ship"
+    | "cabin"
+    | "beach"
+    | "altar"
+    | "sky"
+    | "ocean"
+    | "desert";
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
   isEnding?: boolean;

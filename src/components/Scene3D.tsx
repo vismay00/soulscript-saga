@@ -1,541 +1,304 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Sphere, Box, Cone, Cylinder, MeshDistortMaterial } from "@react-three/drei";
+import { Sphere, Box, Cone, Cylinder, MeshDistortMaterial, Plane } from "@react-three/drei";
 import * as THREE from "three";
 import { BoyCharacter } from "./BoyCharacter";
+import { Scene } from "@/types/story";
 
+// Define the new environment types based on the story scenes
 interface Scene3DProps {
-  environment: "forest" | "ruins" | "gorge" | "cliff" | "temple" | "sanctum" | "garden" | "grove" | "meadow" | "clearing" | "cave" | "sunrise";
+  // Use the canonical environment union from the Scene type so this stays in sync
+  environment: Scene["environment"];
 }
 
 export const Scene3D = ({ environment }: Scene3DProps) => {
   const groupRef = useRef<THREE.Group>(null);
+  // For the glowing water animation. Use a relaxed type because Drei's
+  // MeshDistortMaterial is a React component and its runtime material shape
+  // can be a ShaderMaterial with different fields. We'll treat it as `any`
+  // when animating to avoid incorrect TypeScript assumptions.
+  const waterRef = useRef<THREE.Mesh | null>(null);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.001;
+      // Gentle rotation for a 'drifting' feeling
+      groupRef.current.rotation.y += 0.0005;
+    }
+    
+    // Animate the water distortion for the glowing sea (best-effort).
+    if (waterRef.current) {
+      const mat: any = (waterRef.current.material as any) || null;
+      // MeshDistortMaterial may expose a `uniforms.time` (ShaderMaterial) or
+      // might track `time` differently. Update whichever is present.
+      if (mat) {
+        if (mat.uniforms && mat.uniforms.time) {
+          mat.uniforms.time.value = clock.getElapsedTime() * 0.5;
+        } else if (typeof mat.time !== "undefined") {
+          mat.time = clock.getElapsedTime() * 0.5;
+        }
+      }
     }
   });
 
   const environmentColors = useMemo(() => {
-    switch (environment) {
-      case "forest":
-        return { primary: "#2d5016", secondary: "#689f38", accent: "#558b2f", ground: "#3e2723", sky: "#4a6741" };
-      case "ruins":
-        return { primary: "#ffcc02", secondary: "#ffa726", accent: "#ff8f00", ground: "#8d6e63", sky: "#ffe082" };
-      case "gorge":
-        return { primary: "#37474f", secondary: "#546e7a", accent: "#607d8b", ground: "#424242", sky: "#90a4ae" };
-      case "cliff":
-        return { primary: "#6d4c41", secondary: "#8d6e63", accent: "#a1887f", ground: "#5d4037", sky: "#bcaaa4" };
-      case "temple":
-        return { primary: "#ff6f00", secondary: "#f57c00", accent: "#e65100", ground: "#6d4c41", sky: "#ffcc80" };
-      case "sanctum":
-        return { primary: "#ffd700", secondary: "#ffb300", accent: "#ff8f00", ground: "#8d6e63", sky: "#fff3e0" };
-      case "garden":
-        return { primary: "#81c784", secondary: "#66bb6a", accent: "#4caf50", ground: "#795548", sky: "#c8e6c9" };
-      case "grove":
-        return { primary: "#3949ab", secondary: "#5c6bc0", accent: "#7986cb", ground: "#4a148c", sky: "#e8eaf6" };
-      case "meadow":
-        return { primary: "#7cb342", secondary: "#8bc34a", accent: "#9ccc65", ground: "#689f38", sky: "#dcedc8" };
-      case "clearing":
-        return { primary: "#b2dfdb", secondary: "#80cbc4", accent: "#4db6ac", ground: "#a1887f", sky: "#e0f2f1" };
-      case "cave":
-        return { primary: "#263238", secondary: "#37474f", accent: "#455a64", ground: "#212121", sky: "#90a4ae" };
-      case "sunrise":
-        return { primary: "#ffecb3", secondary: "#ffe082", accent: "#ffd54f", ground: "#bcaaa4", sky: "#fff8e1" };
+    // Colors are themed around the "glowing ocean beneath an endless night sky"
+  switch (environment) {
+      case "ship":
+        return { primary: "#0b0c10", secondary: "#1f2833", accent: "#66fcf1", ground: "#337a72", sky: "#04040a" }; // Night, weathered wood, starlight glow
+      case "cabin":
+        return { primary: "#4e342e", secondary: "#795548", accent: "#ffeb3b", ground: "#212121", sky: "#121212" }; // Dim, wood/ink smell, old gold glow
+      case "beach":
+        return { primary: "#2c3e50", secondary: "#ecf0f1", accent: "#3498db", ground: "#f7f9f9", sky: "#0b0b18" }; // Glowing sand, deep night sky
+      case "altar":
+        return { primary: "#5d3587", secondary: "#9c27b0", accent: "#ff00ff", ground: "#1f003a", sky: "#0a001a" }; // Deep purple, memory pool
+      case "sky":
+        return { primary: "#ffd700", secondary: "#ffeb3b", accent: "#ff0066", ground: "#000000", sky: "#4a148c" }; // Golden path, cosmic purple sky
+      case "ocean":
+        return { primary: "#1976d2", secondary: "#0d47a1", accent: "#4fc3f7", ground: "#011a33", sky: "#011a33" }; // Deep blue, memory depths
+      case "desert":
+        return { primary: "#c79c6a", secondary: "#e8cfae", accent: "#ffd38a", ground: "#e3b97a", sky: "#ffefc2" }; // Warm sand, sun-bleached
       default:
-        return { primary: "#2d5016", secondary: "#689f38", accent: "#558b2f", ground: "#3e2723", sky: "#4a6741" };
+        return { primary: "#0b0c10", secondary: "#1f2833", accent: "#66fcf1", ground: "#337a72", sky: "#04040a" };
     }
   }, [environment]);
 
+  // Define a reusable Starlit Sea component for common environments
+  const StarlitSea = useMemo(() => {
+    const seaColor = environmentColors.primary;
+    const glowColor = environmentColors.accent;
+    return (
+        <Plane args={[100, 100]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow ref={waterRef}>
+            <MeshDistortMaterial
+                color={seaColor}
+                distort={0.5} // Amount of wave distortion
+                speed={1.5}  // Speed of distortion
+                emissive={glowColor}
+                emissiveIntensity={environment === "ship" || environment === "beach" ? 1.5 : 0.5}
+            />
+        </Plane>
+    );
+  }, [environmentColors, environment]);
+  
   return (
     <>
       <group ref={groupRef}>
-        {/* Sky sphere */}
+        {/* Sky sphere (The endless night sky) */}
         <Sphere args={[100, 32, 32]} position={[0, 0, 0]}>
           <meshBasicMaterial color={environmentColors.sky} side={THREE.BackSide} />
         </Sphere>
         
         {/* Ambient lighting */}
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={0.5} color={environmentColors.accent} />
         
-        {/* Main directional light */}
-        <directionalLight position={[10, 20, 10]} intensity={1.5} color="#fffacd" castShadow />
-        <directionalLight position={[-10, 15, -5]} intensity={0.6} color="#fff9e6" />
+        {/* Main starlight/moonlight */}
+        <directionalLight position={[10, 30, 10]} intensity={1.5} color="#d4eaf7" castShadow />
+        <directionalLight position={[-10, 15, -5]} intensity={0.8} color="#99a8b2" />
+        
+        {/* Glowing Water/Ground Plane for most scenes */}
+        {environment !== "sky" && environment !== "ocean" && (
+            <>
+                {StarlitSea}
+            </>
+        )}
         
         {/* Environment-specific lighting */}
-        {environment === "sanctum" && (
+        {environment === "ship" && (
+          // Blue-green glow from the water
+          <pointLight position={[0, -5, 0]} intensity={2} color="#66fcf1" />
+        )}
+        
+        {environment === "altar" && (
+          // Purple/Pink glow from the Tide Altar
+          <pointLight position={[0, 5, 0]} intensity={3} color="#ff00ff" />
+        )}
+        
+        {environment === "sky" && (
+          // Intense golden light for the freedom path
           <>
-            <pointLight position={[0, 8, 0]} intensity={2} color="#ffd700" />
-            <pointLight position={[-4, 4, -4]} intensity={1} color="#ffb300" />
-            <pointLight position={[4, 4, -4]} intensity={1} color="#ffb300" />
+            <directionalLight position={[0, 40, 0]} intensity={5} color="#ffd700" />
+            <pointLight position={[0, 10, 0]} intensity={3} color="#ffeb3b" />
           </>
         )}
         
-        {environment === "temple" && (
+        {environment === "ocean" && (
+          // Deep water lighting
           <>
-            <pointLight position={[0, 6, 0]} intensity={1.5} color="#ff9800" />
-            <pointLight position={[-3, 3, -3]} intensity={0.8} color="#ffb74d" />
-            <pointLight position={[3, 3, -3]} intensity={0.8} color="#ffb74d" />
-          </>
-        )}
-
-        {environment === "grove" && (
-          <>
-            <pointLight position={[0, 10, 0]} intensity={1.2} color="#9c27b0" />
-            <pointLight position={[-5, 5, -5]} intensity={0.8} color="#ba68c8" />
+            <pointLight position={[0, 0, 0]} intensity={0.5} color="#4fc3f7" />
+            <ambientLight intensity={0.1} color="#0d47a1" />
           </>
         )}
 
         {/* Controllable character - appears in all environments */}
         <BoyCharacter />
 
-        {/* Forest environment - mystical awakening */}
-        {environment === "forest" && (
+        {/* SHIP environment - The Drifting Deck */}
+        {environment === "ship" && (
           <>
-            {/* Mossy ground */}
-            <Box args={[40, 0.3, 40]} position={[0, 0, -10]}>
-              <meshStandardMaterial color={environmentColors.ground} />
+            {/* Ship Deck (simple box) */}
+            <Box args={[10, 1.5, 20]} position={[0, 0.75, 0]}>
+              <meshStandardMaterial color={environmentColors.secondary} roughness={0.9} />
             </Box>
             
-            {/* Ancient trees */}
-            {Array.from({ length: 10 }).map((_, i) => {
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 15 + Math.random() * 8;
-              const x = Math.cos(angle) * radius;
-              const z = -10 + Math.sin(angle) * radius;
-              const trunkHeight = 8 + Math.random() * 4;
-              const trunkRadius = 0.4 + Math.random() * 0.2;
-              const foliageHeight = 4 + Math.random() * 2;
-              const foliageRadius = 2 + Math.random() * 1;
-              return (
-                <group key={`ancient-tree-${i}`} position={[x, 0, z]}>
-                  <Cylinder args={[trunkRadius, trunkRadius, trunkHeight, 8]} position={[0, trunkHeight / 2, 0]}>
-                    <meshStandardMaterial color="#3e2723" roughness={0.9} />
-                  </Cylinder>
-                  <Cone args={[foliageRadius, foliageHeight, 8]} position={[0, trunkHeight + foliageHeight / 2, 0]}>
-                    <meshStandardMaterial color="#2e7d32" />
-                  </Cone>
-                </group>
-              );
-            })}
-
-            {/* Mystical glowing moss patches */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 6 + Math.random() * 8;
-              const x = Math.cos(angle) * radius;
-              const z = -10 + Math.sin(angle) * radius;
-              return (
-                <Sphere key={`moss-${i}`} args={[0.8, 16, 16]} position={[x, 0.1, z]}>
-                  <meshStandardMaterial color="#4caf50" emissive="#2e7d32" emissiveIntensity={0.3} />
-                </Sphere>
-              );
-            })}
-
-            {/* Floating light orbs (hints of magic) */}
-            {Array.from({ length: 5 }).map((_, i) => {
-              const angle = (i / 5) * Math.PI * 2;
-              const radius = 12;
-              const x = Math.cos(angle) * radius;
-              const z = -10 + Math.sin(angle) * radius;
-              const y = 3 + Math.sin(Date.now() * 0.001 + i) * 0.5;
-              return (
-                <Sphere key={`light-orb-${i}`} args={[0.2, 16, 16]} position={[x, y, z]}>
-                  <meshStandardMaterial color="#81c784" emissive="#4caf50" emissiveIntensity={0.8} />
-                </Sphere>
-              );
-            })}
-
-            {/* Ancient standing stones */}
-            {[[-8, 0, -8], [8, 0, -12], [0, 0, -18]].map((pos, i) => (
-              <Cylinder key={`stone-${i}`} args={[0.6, 0.8, 3, 8]} position={pos as [number, number, number]} rotation={[0, Math.random() * Math.PI, 0.1]}>
-                <meshStandardMaterial color="#616161" roughness={1} />
-              </Cylinder>
-            ))}
-          </>
-        )}
-
-        {/* Ruins environment - ancient archway */}
-        {environment === "ruins" && (
-          <>
-            {/* Ground with scattered stones */}
-            <Box args={[35, 0.2, 35]} position={[0, 0, -10]}>
-              <meshStandardMaterial color={environmentColors.ground} />
+            {/* Captain's Cabin Structure (partially) */}
+            <Box args={[4, 4, 4]} position={[0, 3.5, -7]}>
+              <meshStandardMaterial color={environmentColors.primary} roughness={0.9} />
             </Box>
 
-            {/* Main archway */}
-            <group position={[0, 0, -15]}>
-              {/* Left pillar */}
-              <Cylinder args={[1.2, 1.5, 8, 12]} position={[-4, 4, 0]}>
-                <meshStandardMaterial color="#ffb74d" roughness={0.8} />
-              </Cylinder>
-              {/* Right pillar */}
-              <Cylinder args={[1.2, 1.5, 8, 12]} position={[4, 4, 0]}>
-                <meshStandardMaterial color="#ffb74d" roughness={0.8} />
-              </Cylinder>
-              {/* Archway top */}
-              <Box args={[10, 1.5, 2]} position={[0, 8.5, 0]}>
-                <meshStandardMaterial color="#ffa726" roughness={0.7} />
-              </Box>
-            </group>
-
-            {/* Glowing runes on pillars */}
-            {[[-4, 6, -15], [4, 6, -15]].map((pos, i) => (
-              <Sphere key={`rune-${i}`} args={[0.3, 16, 16]} position={pos as [number, number, number]}>
-                <meshStandardMaterial color="#ffcc02" emissive="#ff8f00" emissiveIntensity={0.6} />
-              </Sphere>
-            ))}
-
-            {/* Scattered ancient blocks */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 8 + Math.random() * 12;
-              const x = Math.cos(angle) * radius;
-              const z = -10 + Math.sin(angle) * radius;
-              const size = 0.8 + Math.random() * 1.2;
-              return (
-                <Box key={`ruin-block-${i}`} args={[size, size * 0.6, size]} position={[x, size * 0.3, z]} rotation={[0, Math.random() * Math.PI, 0]}>
-                  <meshStandardMaterial color="#d7ccc8" roughness={0.9} />
-                </Box>
-              );
-            })}
-
-            {/* Elder figure (simple representation) */}
-            <group position={[0, 0.9, -15]}>
-              {/* Head */}
-              <Sphere args={[0.35, 12, 12]} position={[0, 0.8, 0]}>
-                <meshStandardMaterial color="#ffe0b2" />
-              </Sphere>
-              {/* Glowing robes */}
-              <Cone args={[0.6, 1.8, 8]} position={[0, 0, 0]}>
-                <meshStandardMaterial color="#fff9c4" emissive="#ffeb3b" emissiveIntensity={0.3} />
-              </Cone>
-            </group>
-          </>
-        )}
-
-        {/* Gorge environment - misty depths */}
-        {environment === "gorge" && (
-          <>
-            {/* Gorge walls */}
-            <Box args={[40, 20, 5]} position={[-15, 10, -10]}>
-              <meshStandardMaterial color={environmentColors.primary} />
-            </Box>
-            <Box args={[40, 20, 5]} position={[15, 10, -10]}>
-              <meshStandardMaterial color={environmentColors.primary} />
-            </Box>
-
-            {/* Misty ground */}
-            <Box args={[30, 0.3, 40]} position={[0, 0, -10]}>
-              <meshStandardMaterial color={environmentColors.ground} />
-            </Box>
-
-            {/* Mist effects (translucent spheres) */}
-            {Array.from({ length: 15 }).map((_, i) => {
-              const x = (Math.random() - 0.5) * 25;
-              const y = Math.random() * 8;
-              const z = -20 + Math.random() * 20;
-              const size = 1 + Math.random() * 2;
-              return (
-                <Sphere key={`mist-${i}`} args={[size, 12, 12]} position={[x, y, z]}>
-                  <meshStandardMaterial color="#eceff1" transparent opacity={0.3} />
-                </Sphere>
-              );
-            })}
-
-            {/* Ancient wooden bridge */}
-            <group position={[0, 1, -10]}>
-              {/* Bridge deck */}
-              <Box args={[12, 0.3, 2]} position={[0, 0, 0]}>
-                <meshStandardMaterial color="#8d6e63" roughness={0.9} />
-              </Box>
-              {/* Bridge supports */}
-              <Cylinder args={[0.1, 0.1, 2, 8]} position={[-5, -1, 0]}>
-                <meshStandardMaterial color="#6d4c41" />
-              </Cylinder>
-              <Cylinder args={[0.1, 0.1, 2, 8]} position={[5, -1, 0]}>
-                <meshStandardMaterial color="#6d4c41" />
-              </Cylinder>
-            </group>
-
-            {/* Mysterious glowing eyes in the mist */}
-            {[[-8, 3, -15], [10, 4, -18], [-12, 2, -12]].map((pos, i) => (
-              <Sphere key={`eyes-${i}`} args={[0.15, 8, 8]} position={pos as [number, number, number]}>
-                <meshStandardMaterial color="#e91e63" emissive="#e91e63" emissiveIntensity={0.8} />
-              </Sphere>
-            ))}
-          </>
-        )}
-
-        {/* Cliff environment - mountain ascent */}
-        {environment === "cliff" && (
-          <>
-            {/* Cliff platform */}
-            <Box args={[20, 1, 15]} position={[0, 0, -5]}>
-              <meshStandardMaterial color={environmentColors.primary} />
-            </Box>
-
-            {/* Mountain backdrop */}
-            {[-8, 0, 8].map((x, i) => (
-              <Cone key={`mountain-${i}`} args={[4 + i, 15 + i * 2, 8]} position={[x, 7.5 + i, -20]}>
+            {/* Mast/Sail (simple vertical cylinder) */}
+            <Cylinder args={[0.3, 0.3, 15, 8]} position={[0, 8.25, 0]}>
                 <meshStandardMaterial color="#8d6e63" />
-              </Cone>
-            ))}
-
-            {/* Temple structure in distance */}
-            <group position={[0, 2, -18]}>
-              {/* Temple base */}
-              <Box args={[6, 3, 4]} position={[0, 1.5, 0]}>
-                <meshStandardMaterial color="#ff8f00" />
-              </Box>
-              {/* Temple pillars */}
-              <Cylinder args={[0.3, 0.3, 4, 8]} position={[-2, 2, 2]}>
-                <meshStandardMaterial color="#ffa726" />
-              </Cylinder>
-              <Cylinder args={[0.3, 0.3, 4, 8]} position={[2, 2, 2]}>
-                <meshStandardMaterial color="#ffa726" />
-              </Cylinder>
-              {/* Temple glow */}
-              <Sphere args={[0.8, 16, 16]} position={[0, 3.5, 0]}>
-                <meshStandardMaterial color="#ffcc02" emissive="#ff8f00" emissiveIntensity={0.5} />
-              </Sphere>
-            </group>
-
-            {/* Rocky outcrops */}
-            {Array.from({ length: 6 }).map((_, i) => {
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 6 + Math.random() * 8;
-              const x = Math.cos(angle) * radius;
-              const z = -8 + Math.sin(angle) * radius;
-              const size = 0.8 + Math.random() * 1;
-              return (
-                <Sphere key={`rock-${i}`} args={[size, 10, 10]} position={[x, size * 0.5, z]}>
-                  <meshStandardMaterial color="#795548" roughness={1} />
-                </Sphere>
-              );
-            })}
+            </Cylinder>
           </>
         )}
 
-        {/* Temple environment - sacred halls */}
-        {environment === "temple" && (
+        {/* CABIN environment - Captain’s Memory */}
+        {environment === "cabin" && (
           <>
-            {/* Temple floor */}
-            <Box args={[25, 0.3, 25]} position={[0, 0, -8]}>
-              <meshStandardMaterial color={environmentColors.ground} />
+            {/* Walls and Floor */}
+            <Box args={[15, 8, 15]} position={[0, 4, -8]}>
+              <meshStandardMaterial color={environmentColors.primary} side={THREE.BackSide} />
             </Box>
-
-            {/* Grand pillars */}
-            {[-6, -2, 2, 6].map((x, i) => (
-              <Cylinder key={`pillar-${i}`} args={[0.8, 0.8, 12, 16]} position={[x, 6, -8]}>
-                <meshStandardMaterial color={environmentColors.accent} roughness={0.6} />
-              </Cylinder>
-            ))}
-
-            {/* Temple ceiling */}
-            <Box args={[25, 1, 25]} position={[0, 12, -8]}>
+            
+            {/* Captain's Table */}
+            <Cylinder args={[2, 2, 1, 6]} position={[0, 0.5, -4]}>
               <meshStandardMaterial color={environmentColors.secondary} />
-            </Box>
-
-            {/* Sacred braziers */}
-            {[[-4, 1.5, -4], [4, 1.5, -4], [-4, 1.5, -12], [4, 1.5, -12]].map((pos, i) => (
-              <group key={`brazier-${i}`} position={pos as [number, number, number]}>
-                <Cylinder args={[0.4, 0.5, 1, 8]} position={[0, 0, 0]}>
-                  <meshStandardMaterial color="#8d6e63" />
-                </Cylinder>
-                <Sphere args={[0.3, 12, 12]} position={[0, 0.8, 0]}>
-                  <meshStandardMaterial color="#ff5722" emissive="#ff5722" emissiveIntensity={0.7} />
-                </Sphere>
-              </group>
-            ))}
-
-            {/* Ancient murals (represented as glowing rectangles) */}
-            {[[-12, 4, -8], [12, 4, -8]].map((pos, i) => (
-              <Box key={`mural-${i}`} args={[0.1, 6, 4]} position={pos as [number, number, number]}>
-                <meshStandardMaterial color="#ffb74d" emissive="#ff8f00" emissiveIntensity={0.2} />
-              </Box>
-            ))}
-          </>
-        )}
-
-        {/* Sanctum environment - final choice chamber */}
-        {environment === "sanctum" && (
-          <>
-            {/* Sacred floor with intricate patterns */}
-            <Cylinder args={[12, 12, 0.4, 32]} position={[0, 0, -8]}>
-              <meshStandardMaterial color={environmentColors.ground} />
             </Cylinder>
-
-            {/* Crystal altar (left choice) */}
-            <group position={[-4, 0, -8]}>
-              <Cylinder args={[1.5, 1.5, 2, 8]} position={[0, 1, 0]}>
-                <meshStandardMaterial color="#e1f5fe" />
-              </Cylinder>
-              <Cone args={[0.5, 1.5, 6]} position={[0, 3, 0]}>
-                <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={0.8} />
-              </Cone>
-            </group>
-
-            {/* Flame altar (right choice) */}
-            <group position={[4, 0, -8]}>
-              <Cylinder args={[1.5, 1.5, 2, 8]} position={[0, 1, 0]}>
-                <meshStandardMaterial color="#ffecb3" />
-              </Cylinder>
-              <Sphere args={[0.6, 16, 16]} position={[0, 3, 0]}>
-                <MeshDistortMaterial color="#ff5722" distort={0.4} speed={2} emissive="#ff5722" emissiveIntensity={0.9} />
-              </Sphere>
-            </group>
-
-            {/* Surrounding light columns */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const angle = (i / 8) * Math.PI * 2;
-              const radius = 10;
-              const x = Math.cos(angle) * radius;
-              const z = -8 + Math.sin(angle) * radius;
-              return (
-                <Cylinder key={`light-column-${i}`} args={[0.3, 0.3, 8, 8]} position={[x, 4, z]}>
-                  <meshStandardMaterial color="#fff9c4" emissive="#ffeb3b" emissiveIntensity={0.5} />
-                </Cylinder>
-              );
-            })}
-
-            {/* Mystical energy swirls */}
-            <Sphere args={[2, 32, 32]} position={[0, 6, -8]}>
-              <MeshDistortMaterial color="#9c27b0" distort={0.6} speed={1.5} emissive="#9c27b0" emissiveIntensity={0.4} transparent opacity={0.7} />
-            </Sphere>
-          </>
-        )}
-
-        {/* Garden environment - silver flowers after bridge */}
-        {environment === "garden" && (
-          <>
-            {/* Garden ground */}
-            <Box args={[30, 0.2, 30]} position={[0, 0, -10]}>
-              <meshStandardMaterial color={environmentColors.ground} />
+            
+            {/* Glowing Map on the table */}
+            <Box args={[1, 0.1, 1]} position={[0, 1, -4]} rotation={[-Math.PI / 2, 0, 0]}>
+              <meshStandardMaterial color={environmentColors.accent} emissive={environmentColors.accent} emissiveIntensity={1.5} />
             </Box>
-
-            {/* Silver flowers */}
-            {Array.from({ length: 20 }).map((_, i) => {
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 5 + Math.random() * 10;
-              const x = Math.cos(angle) * radius;
-              const z = -10 + Math.sin(angle) * radius;
-              return (
-                <group key={`silver-flower-${i}`} position={[x, 0, z]}>
-                  <Cylinder args={[0.02, 0.02, 0.8, 8]} position={[0, 0.4, 0]}>
-                    <meshStandardMaterial color="#4caf50" />
-                  </Cylinder>
-                  <Sphere args={[0.2, 12, 12]} position={[0, 0.8, 0]}>
-                    <meshStandardMaterial color="#eceff1" emissive="#cfd8dc" emissiveIntensity={0.4} />
-                  </Sphere>
-                </group>
-              );
-            })}
-
-            {/* Hidden stair */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Box key={`stair-${i}`} args={[4, 0.3, 1]} position={[0, i * 0.3, -15 - i]}>
-                <meshStandardMaterial color="#8d6e63" />
-              </Box>
-            ))}
-
-            {/* Gentle waterfalls */}
-            {[[-8, 4, -20], [8, 4, -20]].map((pos, i) => (
-              <Box key={`waterfall-${i}`} args={[0.5, 8, 0.2]} position={pos as [number, number, number]}>
-                <meshStandardMaterial color="#4fc3f7" transparent opacity={0.6} />
-              </Box>
-            ))}
           </>
         )}
 
-        {/* Grove environment - moonlit mystery */}
-        {environment === "grove" && (
+        {/* BEACH environment - Shore of Stars */}
+        {environment === "beach" && (
           <>
-            {/* Grove ground */}
-            <Cylinder args={[15, 15, 0.3, 32]} position={[0, 0, -8]}>
-              <meshStandardMaterial color={environmentColors.ground} />
-            </Cylinder>
-
-            {/* Moonlight beam */}
-            <Cylinder args={[0.1, 8, 20, 16]} position={[0, 10, -8]} rotation={[0, 0, 0]}>
-              <meshStandardMaterial color="#e8eaf6" transparent opacity={0.3} />
-            </Cylinder>
-
-            {/* Mystical trees in circle */}
-            {Array.from({ length: 6 }).map((_, i) => {
-              const angle = (i / 6) * Math.PI * 2;
-              const radius = 12;
-              const x = Math.cos(angle) * radius;
-              const z = -8 + Math.sin(angle) * radius;
-              return (
-                <group key={`grove-tree-${i}`} position={[x, 0, z]}>
-                  <Cylinder args={[0.6, 0.6, 8, 8]} position={[0, 4, 0]}>
-                    <meshStandardMaterial color="#4a148c" />
-                  </Cylinder>
-                  <Sphere args={[2, 16, 16]} position={[0, 8.5, 0]}>
-                    <meshStandardMaterial color="#7986cb" emissive="#5c6bc0" emissiveIntensity={0.3} />
-                  </Sphere>
-                </group>
-              );
-            })}
-
-            {/* Floating destiny symbols */}
-            {Array.from({ length: 5 }).map((_, i) => {
-              const angle = (i / 5) * Math.PI * 2;
-              const radius = 4;
-              const x = Math.cos(angle) * radius;
-              const z = -8 + Math.sin(angle) * radius;
-              const y = 2 + Math.sin(Date.now() * 0.002 + i) * 0.8;
-              return (
-                <Sphere key={`symbol-${i}`} args={[0.3, 12, 12]} position={[x, y, z]}>
-                  <meshStandardMaterial color="#ba68c8" emissive="#9c27b0" emissiveIntensity={0.7} />
-                </Sphere>
-              );
-            })}
-          </>
-        )}
-
-        {/* Meadow environment - freedom ending */}
-        {environment === "meadow" && (
-          <>
-            {/* Rolling meadow ground */}
-            <Box args={[60, 0.5, 60]} position={[0, 0, -15]}>
-              <meshStandardMaterial color={environmentColors.primary} />
+            {/* Star Sand Shore (simple plane) */}
+            <Plane args={[40, 40]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+                <meshStandardMaterial color={environmentColors.ground} emissive={environmentColors.accent} emissiveIntensity={0.8} />
+            </Plane>
+            
+            {/* Distant Ship (simple representation) */}
+            <Box args={[8, 1, 15]} position={[10, 0.5, -20]}>
+              <meshStandardMaterial color="#1f2833" roughness={0.9} />
             </Box>
-
-            {/* Distant horizon */}
-            <Sphere args={[30, 32, 32]} position={[0, -10, -50]}>
-              <meshStandardMaterial color="#81c784" />
-            </Sphere>
-
-            {/* Wildflowers everywhere */}
+            
+            {/* Star grains/particles */}
             {Array.from({ length: 30 }).map((_, i) => {
-              const x = (Math.random() - 0.5) * 50;
-              const z = -30 + Math.random() * 40;
-              const color = ['#f8bbd9', '#ffccbc', '#fff9c4', '#e1f5fe'][Math.floor(Math.random() * 4)];
-              return (
-                <Sphere key={`wildflower-${i}`} args={[0.15, 8, 8]} position={[x, 0.1, z]}>
-                  <meshStandardMaterial color={color} />
-                </Sphere>
-              );
+                const x = (Math.random() - 0.5) * 30;
+                const z = (Math.random() - 0.5) * 30;
+                return (
+                    <Sphere key={`star-sand-${i}`} args={[0.05, 8, 8]} position={[x, 0.1, z]}>
+                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
+                    </Sphere>
+                );
             })}
+          </>
+        )}
 
-            {/* Path leading to infinity */}
-            <Box args={[2, 0.1, 60]} position={[0, 0.05, -15]}>
-              <meshStandardMaterial color="#8d6e63" />
+        {/* DESERT environment - Sand and Dunes */}
+        {environment === "desert" && (
+          <>
+            {/* Large sand plane */}
+            <Plane args={[100, 100]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+              <meshStandardMaterial color={environmentColors.ground} roughness={1} metalness={0} />
+            </Plane>
+
+            {/* A few dunes (simple cones) */}
+            {[
+              { pos: [-10, 1, -10], scale: 3 },
+              { pos: [8, 0.8, -6], scale: 2.2 },
+              { pos: [0, 1.2, -18], scale: 3.8 },
+            ].map((d, i) => (
+              <Cone key={`dune-${i}`} args={[d.scale * 2, d.scale * 2, 16]} position={d.pos as any} rotation={[-Math.PI, 0, 0]}>
+                <meshStandardMaterial color={environmentColors.secondary} roughness={1} />
+              </Cone>
+            ))}
+
+            {/* Warm sun light */}
+            <directionalLight position={[30, 50, 10]} intensity={1.6} color={environmentColors.accent} />
+            <ambientLight intensity={0.4} color={environmentColors.accent} />
+          </>
+        )}
+
+        {/* ALTAR environment - The Tide Altar */}
+        {environment === "altar" && (
+          <>
+            {/* Central Glowing Pool (Sphere slightly below surface) */}
+            <Sphere args={[4, 32, 32]} position={[0, -0.2, 0]}>
+                <meshStandardMaterial color={environmentColors.accent} emissive={environmentColors.accent} emissiveIntensity={2} transparent opacity={0.6} />
+            </Sphere>
+            
+            {/* Stone Pillars around the pool */}
+            {Array.from({ length: 6 }).map((_, i) => {
+                const angle = (i / 6) * Math.PI * 2;
+                const radius = 8;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                return (
+                    <Cylinder key={`pillar-${i}`} args={[1, 1, 10, 8]} position={[x, 4.5, z]}>
+                        <meshStandardMaterial color={environmentColors.secondary} roughness={0.9} />
+                    </Cylinder>
+                );
+            })}
+          </>
+        )}
+
+        {/* STARPATH / SKY environment - Path of Light */}
+        {environment === "sky" && (
+          <>
+            {/* Golden Bridge of Light */}
+            <Box args={[5, 0.2, 50]} position={[0, 0, -25]}>
+                <meshStandardMaterial color={environmentColors.primary} emissive={environmentColors.primary} emissiveIntensity={1} />
             </Box>
 
-            {/* Freedom birds */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const x = (Math.random() - 0.5) * 40;
-              const y = 8 + Math.random() * 5;
-              const z = -20 + Math.random() * 30;
-              return (
-                <Sphere key={`bird-${i}`} args={[0.2, 8, 8]} position={[x, y, z]}>
-                  <meshStandardMaterial color="#ffffff" />
+            {/* Distant Stars (small, bright spheres) */}
+            {Array.from({ length: 50 }).map((_, i) => {
+                const x = (Math.random() - 0.5) * 60;
+                const y = (Math.random() - 0.5) * 60;
+                const z = -60 + Math.random() * 40;
+                return (
+                    <Sphere key={`star-${i}`} args={[0.1, 8, 8]} position={[x, y, z]}>
+                        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1} />
+                    </Sphere>
+                );
+            })}
+            
+            {/* Celestial Guardian symbol (simple torus) */}
+            <group position={[0, 10, -40]}>
+                <Sphere args={[2, 32, 32]}>
+                    <MeshDistortMaterial color="#ffd700" distort={0.5} speed={1} emissive="#ffeb3b" emissiveIntensity={0.8} transparent opacity={0.9} />
                 </Sphere>
-              );
+            </group>
+          </>
+        )}
+
+        {/* DEPTHS / OCEAN environment - The Sea Below */}
+        {environment === "ocean" && (
+          <>
+            {/* Endless Dark Water (Large Distorted Sphere with backface rendering) */}
+            <Sphere args={[50, 64, 64]} position={[0, 0, 0]}>
+                <MeshDistortMaterial
+                    color={environmentColors.primary}
+                    distort={0.8}
+                    speed={0.5}
+                    emissive={environmentColors.accent}
+                    emissiveIntensity={0.2}
+                    side={THREE.DoubleSide}
+                />
+            </Sphere>
+
+            {/* Floating Echoes/Souls (shimmering spheres) */}
+            {Array.from({ length: 20 }).map((_, i) => {
+                const x = (Math.random() - 0.5) * 20;
+                const y = (Math.random() - 0.5) * 15;
+                const z = (Math.random() - 0.5) * 20;
+                return (
+                    <Sphere key={`echo-${i}`} args={[0.2 + Math.random() * 0.3, 16, 16]} position={[x, y, z]}>
+                        <meshStandardMaterial color="#e0f7fa" emissive="#4fc3f7" emissiveIntensity={0.5} transparent opacity={0.7} />
+                    </Sphere>
+                );
             })}
           </>
         )}
