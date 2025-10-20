@@ -39,7 +39,10 @@ export const BackgroundMusic = ({ environment, userAllowed }: BackgroundMusicPro
   // Sound layer definitions for each environment
   // Make this a Partial map so we only need to provide layers for
   // environments we want to customize. Missing keys will fallback to []
-  const ENV_LAYERS: Partial<Record<Environment, Array<{ key: string; create: (ctx: AudioContext, master: GainNode) => { gain: GainNode; stop: () => void } }>>> = {
+  // ENV_LAYERS can include extra design-time-only environment keys (e.g. 'forest', 'meadow')
+  // which may not be part of the canonical Scene.environment union. Use a looser index
+  // signature so we don't get TS errors when adding artistic environments.
+  const ENV_LAYERS: Partial<Record<string, Array<{ key: string; create: (ctx: AudioContext, master: GainNode) => { gain: GainNode; stop: () => void } }>>> = {
     forest: [
       // Wind
       {
